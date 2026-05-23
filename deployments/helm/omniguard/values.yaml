@@ -1,0 +1,24 @@
+kafka:
+  enabled: true
+opensearch:
+  enabled: true
+postgresql:
+  enabled: true
+
+ingestion:
+  replicaCount: 3
+  image:
+    repository: omniguard/ingestion
+    tag: latest
+
+normalization:
+  replicaCount: 3
+  image:
+    repository: omniguard/normalization
+    tag: latest
+
+correlation:
+  replicaCount: 2
+  image:
+    repository: omniguard/correlation
+    tag: latest

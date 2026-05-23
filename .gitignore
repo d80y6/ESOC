@@ -1,0 +1,29 @@
+# Go
+**/*.exe
+**/*.test
+**/*.prof
+identity
+ingestion
+normalization
+search
+correlation
+alerting
+case-management
+
+# Python
+venv/
+__pycache__/
+*.pyc
+.env
+
+# Node
+node_modules/
+.next/
+out/
+build/
+frontend/node_modules/
+frontend/.next/
+
+# IDEs
+.vscode/
+.idea/

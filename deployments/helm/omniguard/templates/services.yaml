@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "omniguard.fullname" . }}-normalization
+spec:
+  replicas: {{ .Values.normalization.replicaCount }}
+  selector:
+    matchLabels:
+      app: normalization
+  template:
+    metadata:
+      labels:
+        app: normalization
+    spec:
+      containers:
+        - name: normalization
+          image: "{{ .Values.normalization.image.repository }}:{{ .Values.normalization.image.tag }}"
+          env:
+            - name: KAFKA_BROKERS
+              value: "{{ .Values.kafka.fullnameOverride }}:9092"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "omniguard.fullname" . }}-search
+spec:
+  replicas: {{ .Values.search.replicaCount | default 2 }}
+  selector:
+    matchLabels:
+      app: search
+  template:
+    metadata:
+      labels:
+        app: search
+    spec:
+      containers:
+        - name: search
+          image: "{{ .Values.search.image.repository }}:{{ .Values.search.image.tag }}"
+          ports:
+            - containerPort: 8083
+          env:
+            - name: OPENSEARCH_URLS
+              value: "http://{{ .Values.opensearch.fullnameOverride }}:9200"
+            - name: CLICKHOUSE_URL
+              value: "http://clickhouse:8123"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "omniguard.fullname" . }}-search
+spec:
+  ports:
+    - port: 80
+      targetPort: 8083
+      name: http
+  selector:
+    app: search

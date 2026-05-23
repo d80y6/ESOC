@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "omniguard.fullname" . }}-ingestion
+spec:
+  replicas: {{ .Values.ingestion.replicaCount }}
+  selector:
+    matchLabels:
+      app: ingestion
+  template:
+    metadata:
+      labels:
+        app: ingestion
+    spec:
+      containers:
+        - name: ingestion
+          image: "{{ .Values.ingestion.image.repository }}:{{ .Values.ingestion.image.tag }}"
+          ports:
+            - containerPort: 8082
+            - containerPort: 8080
+          env:
+            - name: KAFKA_BROKERS
+              value: "{{ .Values.kafka.fullnameOverride }}:9092"
+            - name: RAW_LOGS_TOPIC
+              value: "raw-logs"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "omniguard.fullname" . }}-ingestion
+spec:
+  ports:
+    - port: 8082
+      name: grpc
+    - port: 80
+      targetPort: 8080
+      name: http
+  selector:
+    app: ingestion

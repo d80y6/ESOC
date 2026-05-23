@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package omniguard.ingestion.v1;
+
+option go_package = "github.com/omniguard/ingestion/api/proto/v1;ingestionv1";
+
+service IngestionService {
+  rpc IngestLog(IngestLogRequest) returns (IngestLogResponse);
+}
+
+message IngestLogRequest {
+  string source = 1;
+  string type = 2;
+  bytes payload = 3;
+}
+
+message IngestLogResponse {
+  string event_id = 1;
+  bool success = 2;
+}

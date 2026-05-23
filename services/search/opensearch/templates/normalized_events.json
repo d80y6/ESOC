@@ -1,0 +1,64 @@
+{
+  "index_patterns": ["normalized-events-*"],
+  "template": {
+    "settings": {
+      "index": {
+        "number_of_shards": 3,
+        "number_of_replicas": 1,
+        "refresh_interval": "5s"
+      }
+    },
+    "mappings": {
+      "properties": {
+        "@timestamp": { "type": "date" },
+        "message": { "type": "text" },
+        "event": {
+          "properties": {
+            "id": { "type": "keyword" },
+            "action": { "type": "keyword" },
+            "category": { "type": "keyword" },
+            "outcome": { "type": "keyword" },
+            "kind": { "type": "keyword" },
+            "dataset": { "type": "keyword" },
+            "module": { "type": "keyword" },
+            "severity": { "type": "long" },
+            "risk_score": { "type": "float" }
+          }
+        },
+        "host": {
+          "properties": {
+            "hostname": { "type": "keyword" },
+            "ip": { "type": "ip" },
+            "id": { "type": "keyword" },
+            "type": { "type": "keyword" }
+          }
+        },
+        "source": {
+          "properties": {
+            "ip": { "type": "ip" },
+            "port": { "type": "long" },
+            "domain": { "type": "keyword" },
+            "address": { "type": "keyword" }
+          }
+        },
+        "destination": {
+          "properties": {
+            "ip": { "type": "ip" },
+            "port": { "type": "long" },
+            "domain": { "type": "keyword" },
+            "address": { "type": "keyword" }
+          }
+        },
+        "user": {
+          "properties": {
+            "id": { "type": "keyword" },
+            "name": { "type": "keyword" }
+          }
+        },
+        "labels": { "type": "flattened" },
+        "tags": { "type": "keyword" },
+        "metadata": { "type": "flattened" }
+      }
+    }
+  }
+}

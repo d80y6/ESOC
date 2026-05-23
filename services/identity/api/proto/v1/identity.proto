@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package omniguard.identity.v1;
+
+option go_package = "github.com/omniguard/identity/api/proto/v1;identityv1";
+
+service IdentityService {
+  rpc ValidateToken(ValidateTokenRequest) returns (ValidateTokenResponse);
+  rpc GetUserPermissions(GetUserPermissionsRequest) returns (GetUserPermissionsResponse);
+}
+
+message ValidateTokenRequest {
+  string token = 1;
+}
+
+message ValidateTokenResponse {
+  bool valid = 1;
+  string tenant_id = 2;
+  string user_id = 3;
+}
+
+message GetUserPermissionsRequest {
+  string user_id = 1;
+}
+
+message GetUserPermissionsResponse {
+  repeated string permissions = 1;
+}
