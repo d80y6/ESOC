@@ -36,6 +36,7 @@ func (h *SearchHandler) SearchLogs(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request"})
 	}
 
+	// Always use tenant_id from context, never from request body
 	tenantID, ok := c.Get("tenant_id").(string)
 	if !ok || tenantID == "" {
 		return c.JSON(http.StatusForbidden, map[string]string{"error": "missing tenant context"})

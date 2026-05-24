@@ -8,6 +8,7 @@ import (
 
 type Case struct {
 	ID          uint           `gorm:"primaryKey" json:"id"`
+	TenantID    string         `gorm:"index" json:"tenant_id"`
 	Title       string         `json:"title"`
 	Description string         `json:"description"`
 	Severity    string         `json:"severity"`
@@ -22,14 +23,16 @@ type Case struct {
 }
 
 type Alert struct {
-	ID        uint   `gorm:"primaryKey" json:"id"`
-	CaseID    *uint  `json:"case_id"`
+	ID         uint   `gorm:"primaryKey" json:"id"`
+	TenantID   string `gorm:"index" json:"tenant_id"`
+	CaseID     *uint  `json:"case_id"`
 	ExternalID string `json:"external_id"` // Reference to Alerting service ID
 	Title      string `json:"title"`
 }
 
 type Evidence struct {
 	ID        uint      `gorm:"primaryKey" json:"id"`
+	TenantID  string    `gorm:"index" json:"tenant_id"`
 	CaseID    uint      `json:"case_id"`
 	Type      string    `json:"type"` // ip, hash, url, file, etc
 	Value     string    `json:"value"`

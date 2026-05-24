@@ -15,6 +15,17 @@ spec:
       containers:
         - name: normalization
           image: "{{ .Values.normalization.image.repository }}:{{ .Values.normalization.image.tag }}"
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - ps aux | grep -v grep | grep normalization
+            initialDelaySeconds: 15
+          resources:
+            {{- toYaml .Values.normalization.resources | nindent 12 }}
+          securityContext:
+            {{- toYaml .Values.normalization.securityContext | nindent 12 }}
           env:
             - name: KAFKA_BROKERS
               value: "{{ .Values.kafka.fullnameOverride }}:9092"
@@ -38,6 +49,25 @@ spec:
           image: "{{ .Values.search.image.repository }}:{{ .Values.search.image.tag }}"
           ports:
             - containerPort: 8083
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8083
+            initialDelaySeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8083
+            initialDelaySeconds: 5
+          resources:
+            limits:
+              cpu: 500m
+              memory: 512Mi
+            requests:
+              cpu: 100m
+              memory: 256Mi
+          securityContext:
+            {{- toYaml .Values.search.securityContext | nindent 12 }}
           env:
             - name: OPENSEARCH_URLS
               value: "http://{{ .Values.opensearch.fullnameOverride }}:9200"

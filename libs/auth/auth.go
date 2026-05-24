@@ -22,6 +22,7 @@ const (
 
 type Authenticator struct {
 	verifier *oidc.IDTokenVerifier
+	clientID string
 }
 
 func NewAuthenticator(ctx context.Context, issuerURL string, clientID string) (*Authenticator, error) {
@@ -37,14 +38,27 @@ func NewAuthenticator(ctx context.Context, issuerURL string, clientID string) (*
 
 	return &Authenticator{
 		verifier: verifier,
+		clientID: clientID,
 	}, nil
 }
 
 // VerifyToken verifies the raw token and returns the parsed JWT token
 func (a *Authenticator) VerifyToken(ctx context.Context, rawToken string) (*jwt.Token, error) {
-	_, err := a.verifier.Verify(ctx, rawToken)
+	idToken, err := a.verifier.Verify(ctx, rawToken)
 	if err != nil {
 		return nil, fmt.Errorf("failed to verify token: %v", err)
+	}
+
+	// Double check audience if not handled by verifier correctly in all OIDC providers
+	found := false
+	for _, aud := range idToken.Audience {
+		if aud == a.clientID {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return nil, fmt.Errorf("invalid audience")
 	}
 
 	token, _, err := new(jwt.Parser).ParseUnverified(rawToken, jwt.MapClaims{})

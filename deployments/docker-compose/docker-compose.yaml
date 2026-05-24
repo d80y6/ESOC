@@ -30,7 +30,7 @@ services:
       - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
       - DISABLE_INSTALL_DEMO_CONFIG=true
       - DISABLE_SECURITY_PLUGIN=false
-      - "OPENSEARCH_INITIAL_ADMIN_PASSWORD=Complex_Password_123!"
+      - "OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_ADMIN_PASSWORD:-Complex_Password_123!}"
     ulimits:
       memlock:
         soft: -1
@@ -63,7 +63,7 @@ services:
     image: postgres:15-alpine
     environment:
       - POSTGRES_USER=omniguard_admin
-      - POSTGRES_PASSWORD=RotateMe_2025_Secret!
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-RotateMe_2025_Secret!}
       - POSTGRES_DB=omniguard
     ports:
       - "5432:5432"
