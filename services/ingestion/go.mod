@@ -1,10 +1,11 @@
 module github.com/omniguard/ingestion
 
-go 1.23.0
+go 1.25.0
 
 require (
 	github.com/google/uuid v1.6.0
 	github.com/labstack/echo/v4 v4.15.2
+	github.com/omniguard/libs/auth v0.0.0
 	github.com/segmentio/kafka-go v0.4.51
 	github.com/spf13/viper v1.21.0
 	go.uber.org/zap v1.28.0
@@ -12,9 +13,15 @@ require (
 	google.golang.org/protobuf v1.36.11
 )
 
+replace github.com/omniguard/libs/auth => ../../libs/auth
+
 require (
+	github.com/coreos/go-oidc/v3 v3.18.0 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
+	github.com/go-jose/go-jose/v4 v4.1.4 // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
+	github.com/golang-jwt/jwt/v5 v5.2.1 // indirect
+	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.1.0 // indirect
 	github.com/klauspost/compress v1.15.9 // indirect
 	github.com/labstack/gommon v0.5.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
@@ -33,6 +40,7 @@ require (
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/crypto v0.50.0 // indirect
 	golang.org/x/net v0.53.0 // indirect
+	golang.org/x/oauth2 v0.36.0 // indirect
 	golang.org/x/sys v0.43.0 // indirect
 	golang.org/x/text v0.36.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260226221140-a57be14db171 // indirect

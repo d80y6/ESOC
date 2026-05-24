@@ -22,20 +22,23 @@ func NewIngestionGRPCServer(logger *zap.Logger, producer *producer.KafkaProducer
 }
 
 type RawLog struct {
-	EventID string `json:"event_id"`
-	Source  string `json:"source"`
-	Type    string `json:"type"`
-	Payload []byte `json:"payload"`
+	EventID  string `json:"event_id"`
+	TenantID string `json:"tenant_id"`
+	Source   string `json:"source"`
+	Type     string `json:"type"`
+	Payload  []byte `json:"payload"`
 }
 
 func (s *IngestionGRPCServer) IngestLog(ctx context.Context, req *pb.IngestLogRequest) (*pb.IngestLogResponse, error) {
 	eventID := uuid.New().String()
+	tenantID, _ := ctx.Value("tenant_id").(string)
 
 	rawLog := RawLog{
-		EventID: eventID,
-		Source:  req.Source,
-		Type:    req.Type,
-		Payload: req.Payload,
+		EventID:  eventID,
+		TenantID: tenantID,
+		Source:   req.Source,
+		Type:     req.Type,
+		Payload:  req.Payload,
 	}
 
 	if err := s.producer.Publish(ctx, eventID, rawLog); err != nil {

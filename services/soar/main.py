@@ -1,11 +1,18 @@
-from fastapi import FastAPI, BackgroundTasks
+from fastapi import FastAPI, BackgroundTasks, Request
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 from core.executor import WorkflowExecutor
+from core.auth import AuthMiddleware
 import uvicorn
 
 app = FastAPI(title="OmniGuard SOAR")
 executor = WorkflowExecutor()
+
+# Apply Auth Middleware
+app.middleware("http")(AuthMiddleware(
+    issuer_url="http://keycloak:8080/realms/omniguard",
+    audience="omniguard-backend"
+))
 
 class Workflow(BaseModel):
     id: str

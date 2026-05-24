@@ -36,16 +36,35 @@ func (h *SearchHandler) SearchLogs(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request"})
 	}
 
+	tenantID, ok := c.Get("tenant_id").(string)
+	if !ok || tenantID == "" {
+		return c.JSON(http.StatusForbidden, map[string]string{"error": "missing tenant context"})
+	}
+
 	if req.Size == 0 {
 		req.Size = 10
 	}
 
 	// Simple match_all if no query, else use query_string for flexibility
+	// ENFORCE TENANT ISOLATION
 	var queryBody string
 	if req.Query == "" {
-		queryBody = `{"query": {"match_all": {}}}`
+		queryBody = fmt.Sprintf(`{"query": {"bool": {"filter": [{"term": {"tenant_id": "%s"}}]}}}`, tenantID)
 	} else {
-		queryBody = fmt.Sprintf(`{"query": {"query_string": {"query": "%s"}}}`, strings.ReplaceAll(req.Query, `"`, `\"`))
+		// Use a bool query to combine user query and tenant filter
+		userQuery := strings.ReplaceAll(req.Query, `"`, `\"`)
+		queryBody = fmt.Sprintf(`{
+			"query": {
+				"bool": {
+					"must": [
+						{"query_string": {"query": "%s"}}
+					],
+					"filter": [
+						{"term": {"tenant_id": "%s"}}
+					]
+				}
+			}
+		}`, userQuery, tenantID)
 	}
 
 	res, err := h.client.Search(

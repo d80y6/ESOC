@@ -7,10 +7,12 @@ import (
 	"os/signal"
 	"syscall"
 
+	"context"
 	"github.com/labstack/echo/v4"
 	"github.com/omniguard/ingestion/config"
 	"github.com/omniguard/ingestion/internal/producer"
 	"github.com/omniguard/ingestion/internal/server"
+	"github.com/omniguard/libs/auth"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
@@ -31,13 +33,27 @@ func main() {
 	kp := producer.NewKafkaProducer(cfg.KafkaBrokers, cfg.RawLogsTopic, logger)
 	defer kp.Close()
 
+	// Authenticator
+	authenticator, err := auth.NewAuthenticator(context.Background(), "http://keycloak:8080/realms/omniguard", "omniguard-backend")
+	if err != nil {
+		logger.Fatal("failed to create authenticator", zap.Error(err))
+	}
+
 	// gRPC Server
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", cfg.GRPCPort))
 	if err != nil {
 		logger.Fatal("failed to listen gRPC", zap.Error(err))
 	}
 
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(
+		grpc.UnaryInterceptor(func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+			newCtx, err := authenticator.GRPCAuthInterceptor(ctx)
+			if err != nil {
+				return nil, err
+			}
+			return handler(newCtx, req)
+		}),
+	)
 	pb.RegisterIngestionServiceServer(grpcServer, server.NewIngestionGRPCServer(logger, kp))
 	reflection.Register(grpcServer)
 
@@ -50,6 +66,7 @@ func main() {
 
 	// HTTP Server
 	e := echo.New()
+	e.Use(authenticator.EchoAuthMiddleware)
 	httpSrv := server.NewIngestionHTTPServer(logger, kp)
 	httpSrv.RegisterRoutes(e)
 

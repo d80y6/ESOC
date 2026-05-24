@@ -7,10 +7,12 @@ import (
 	"os/signal"
 	"syscall"
 
+	"context"
 	"github.com/labstack/echo/v4"
 	"github.com/omniguard/case-management/config"
 	"github.com/omniguard/case-management/internal/handler"
 	"github.com/omniguard/case-management/internal/store"
+	"github.com/omniguard/libs/auth"
 	"go.uber.org/zap"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -35,7 +37,14 @@ func main() {
 		logger.Fatal("failed to migrate database", zap.Error(err))
 	}
 
+	// Authenticator
+	authenticator, err := auth.NewAuthenticator(context.Background(), "http://keycloak:8080/realms/omniguard", "omniguard-backend")
+	if err != nil {
+		logger.Fatal("failed to create authenticator", zap.Error(err))
+	}
+
 	e := echo.New()
+	e.Use(authenticator.EchoAuthMiddleware)
 
 	caseHandler := handler.NewCaseHandler(db)
 	caseHandler.RegisterRoutes(e)

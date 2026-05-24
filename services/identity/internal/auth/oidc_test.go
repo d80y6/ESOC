@@ -2,6 +2,7 @@ package auth
 
 import (
 	"testing"
+	"github.com/omniguard/libs/auth"
 )
 
 func TestExtractToken(t *testing.T) {
@@ -19,7 +20,7 @@ func TestExtractToken(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ExtractToken(tt.header)
+			got, err := auth.ExtractToken(tt.header)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ExtractToken() error = %v, wantErr %v", err, tt.wantErr)
 				return
