@@ -11,6 +11,7 @@ import (
 	"github.com/omniguard/identity/config"
 	"github.com/omniguard/identity/internal/auth"
 	"github.com/omniguard/identity/internal/server"
+	libsauth "github.com/omniguard/libs/auth"
 	"go.uber.org/zap"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
@@ -28,18 +29,27 @@ func main() {
 	defer logger.Sync()
 
 	// Initialize Authenticator
-	authenticator, err := auth.NewAuthenticator(context.Background(), cfg.KeycloakURL+"/realms/"+cfg.KeycloakRealm)
+	libsAuthenticator, err := libsauth.NewAuthenticator(context.Background(), cfg.KeycloakURL+"/realms/"+cfg.KeycloakRealm, "omniguard-backend")
 	if err != nil {
-		logger.Warn("Failed to initialize Keycloak authenticator, using mock mode for development", zap.Error(err))
-		// In a real prod environment, we might fatal here.
+		logger.Fatal("failed to initialize Keycloak authenticator", zap.Error(err))
 	}
+
+	authenticator := &auth.Authenticator{Authenticator: libsAuthenticator}
 
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", cfg.GRPCPort))
 	if err != nil {
 		logger.Fatal("failed to listen", zap.Error(err))
 	}
 
-	s := grpc.NewServer()
+	s := grpc.NewServer(
+		grpc.UnaryInterceptor(func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+			newCtx, err := authenticator.GRPCAuthInterceptor(ctx)
+			if err != nil {
+				return nil, err
+			}
+			return handler(newCtx, req)
+		}),
+	)
 
 	// Register Identity Server
 	identitySrv := server.NewIdentityServer(authenticator)

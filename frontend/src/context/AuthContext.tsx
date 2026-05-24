@@ -21,18 +21,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    // For local dev without Keycloak, we might mock this
-    // const kc = new Keycloak(keycloakConfig);
-    // kc.init({ onLoad: "login-required" }).then((auth) => {
-    //   setAuthenticated(auth);
-    //   setToken(kc.token || null);
-    //   setUser(kc.tokenParsed);
-    // });
+    const kc = new Keycloak(keycloakConfig);
+    kc.init({ onLoad: "login-required", checkLoginIframe: false }).then((auth) => {
+      setAuthenticated(auth);
+      setToken(kc.token || null);
+      setUser(kc.tokenParsed);
 
-    // Mocking for now to allow UI development
-    setAuthenticated(true);
-    setToken("mock-token");
-    setUser({ preferred_username: "admin" });
+      // Keep token fresh
+      setInterval(() => {
+        kc.updateToken(70).then((refreshed) => {
+          if (refreshed) {
+            setToken(kc.token || null);
+          }
+        });
+      }, 60000);
+    }).catch(() => {
+      console.error("Authenticated Failed");
+    });
   }, []);
 
   return (

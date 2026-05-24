@@ -14,16 +14,24 @@ class RAGManager:
             ssl_show_warn=False,
         )
 
-    def retrieve_context(self, query, index="normalized-events-*", limit=5):
-        logger.info(f"Retrieving context for query: {query}")
+    def retrieve_context(self, query, tenant_id, index="normalized-events-*", limit=5):
+        logger.info(f"Retrieving context for query: {query} (Tenant: {tenant_id})")
 
-        # Simple keyword search for demonstration.
-        # In production, this would use vector embeddings and k-NN search.
+        # Simple keyword search for demonstration with MANDATORY tenant filter.
         body = {
             "query": {
-                "multi_match": {
-                    "query": query,
-                    "fields": ["message", "event.action", "rule_name"]
+                "bool": {
+                    "must": [
+                        {
+                            "multi_match": {
+                                "query": query,
+                                "fields": ["message", "event.action", "rule_name"]
+                            }
+                        }
+                    ],
+                    "filter": [
+                        {"term": {"tenant_id": tenant_id}}
+                    ]
                 }
             },
             "size": limit

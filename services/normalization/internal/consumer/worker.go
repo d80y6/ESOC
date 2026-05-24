@@ -38,10 +38,11 @@ func NewWorker(brokers []string, rawTopic, normTopic, groupID string, logger *za
 }
 
 type RawLog struct {
-	EventID string `json:"event_id"`
-	Source  string `json:"source"`
-	Type    string `json:"type"`
-	Payload []byte `json:"payload"`
+	EventID  string `json:"event_id"`
+	TenantID string `json:"tenant_id"`
+	Source   string `json:"source"`
+	Type     string `json:"type"`
+	Payload  []byte `json:"payload"`
 }
 
 func (w *Worker) Start(ctx context.Context) {
@@ -73,6 +74,7 @@ func (w *Worker) Start(ctx context.Context) {
 		}
 
 		normalized.Event.ID = raw.EventID
+		normalized.TenantID = raw.TenantID
 
 		val, _ := json.Marshal(normalized)
 		err = w.writer.WriteMessages(ctx, kafka.Message{

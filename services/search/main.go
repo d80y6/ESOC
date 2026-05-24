@@ -7,9 +7,11 @@ import (
 	"os/signal"
 	"syscall"
 
+	"context"
 	"github.com/labstack/echo/v4"
 	"github.com/omniguard/search/config"
 	"github.com/omniguard/search/internal/handler"
+	"github.com/omniguard/libs/auth"
 	"github.com/opensearch-project/opensearch-go/v2"
 	"go.uber.org/zap"
 )
@@ -31,7 +33,14 @@ func main() {
 		logger.Fatal("failed to create opensearch client", zap.Error(err))
 	}
 
+	// Authenticator
+	authenticator, err := auth.NewAuthenticator(context.Background(), "http://keycloak:8080/realms/omniguard", "omniguard-backend")
+	if err != nil {
+		logger.Fatal("failed to create authenticator", zap.Error(err))
+	}
+
 	e := echo.New()
+	e.Use(authenticator.EchoAuthMiddleware)
 
 	searchHandler := handler.NewSearchHandler(client, logger)
 	searchHandler.RegisterRoutes(e)

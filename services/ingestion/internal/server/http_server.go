@@ -35,12 +35,14 @@ func (s *IngestionHTTPServer) IngestLog(c echo.Context) error {
 	}
 
 	eventID := uuid.New().String()
+	tenantID, _ := c.Get("tenant_id").(string)
 
 	rawLog := RawLog{
-		EventID: eventID,
-		Source:  req.Source,
-		Type:    req.Type,
-		Payload: []byte(req.Payload),
+		EventID:  eventID,
+		TenantID: tenantID,
+		Source:   req.Source,
+		Type:     req.Type,
+		Payload:  []byte(req.Payload),
 	}
 
 	if err := s.producer.Publish(context.Background(), eventID, rawLog); err != nil {

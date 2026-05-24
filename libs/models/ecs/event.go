@@ -58,6 +58,7 @@ type User struct {
 // NormalizedEvent is the container for all ECS fields
 type NormalizedEvent struct {
 	Base
+	TenantID    string      `json:"tenant_id,omitempty"`
 	Event       Event       `json:"event"`
 	Agent       *Agent      `json:"agent,omitempty"`
 	Host        *Host       `json:"host,omitempty"`

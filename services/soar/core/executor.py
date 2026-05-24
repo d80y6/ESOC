@@ -27,10 +27,24 @@ class WorkflowExecutor:
 
     def http_request(self, params, context):
         method = params.get("method", "GET")
-        url = params.get("url")
-        # Template URL with context data
-        url = url.format(**context)
-        resp = requests.request(method, url, json=params.get("body"))
+        url_template = params.get("url")
+
+        # SSRF Protection: URL Allowlist (Demo)
+        allowed_domains = ["slack.com", "hooks.slack.com", "api.pagerduty.com", "outlook.office.com"]
+
+        try:
+            url = url_template.format(**context)
+        except KeyError as e:
+            logger.error(f"Context missing key for URL template: {e}")
+            return
+
+        from urllib.parse import urlparse
+        parsed_url = urlparse(url)
+        if parsed_url.netloc not in allowed_domains:
+            logger.error(f"Access to domain {parsed_url.netloc} is forbidden (SSRF Protection)")
+            return
+
+        resp = requests.request(method, url, json=params.get("body"), timeout=10)
         logger.info(f"HTTP {method} to {url} returned {resp.status_code}")
 
     def slack_notify(self, params, context):

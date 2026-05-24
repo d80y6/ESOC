@@ -10,12 +10,32 @@ ingestion:
   image:
     repository: omniguard/ingestion
     tag: latest
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
 
 normalization:
   replicaCount: 3
   image:
     repository: omniguard/normalization
     tag: latest
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+    requests:
+      cpu: 200m
+      memory: 512Mi
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
 
 correlation:
   replicaCount: 2
