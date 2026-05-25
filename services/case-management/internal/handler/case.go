@@ -5,6 +5,7 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/omniguard/case-management/internal/store"
+	"github.com/omniguard/libs/auth"
 	"gorm.io/gorm"
 )
 
@@ -17,11 +18,17 @@ func NewCaseHandler(db *gorm.DB) *CaseHandler {
 }
 
 func (h *CaseHandler) CreateCase(c echo.Context) error {
+	tenantID := auth.GetEchoTenantID(c)
+	if tenantID == "" {
+		return c.JSON(http.StatusForbidden, map[string]string{"error": "missing tenant context"})
+	}
+
 	var cs store.Case
 	if err := c.Bind(&cs); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request"})
 	}
 
+	cs.TenantID = tenantID
 	if err := h.db.Create(&cs).Error; err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to create case"})
 	}
@@ -30,8 +37,15 @@ func (h *CaseHandler) CreateCase(c echo.Context) error {
 }
 
 func (h *CaseHandler) GetCases(c echo.Context) error {
+	tenantID := auth.GetEchoTenantID(c)
+	if tenantID == "" {
+		return c.JSON(http.StatusForbidden, map[string]string{"error": "missing tenant context"})
+	}
+
 	var cases []store.Case
-	h.db.Preload("Alerts").Preload("Evidence").Find(&cases)
+	if err := h.db.Where("tenant_id = ?", tenantID).Preload("Alerts").Preload("Evidence").Find(&cases).Error; err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to fetch cases"})
+	}
 	return c.JSON(http.StatusOK, cases)
 }
 

@@ -10,6 +10,7 @@ import (
 
 	"github.com/omniguard/alerting/config"
 	"github.com/omniguard/alerting/internal/consumer"
+	"github.com/omniguard/alerting/internal/handler"
 	"github.com/omniguard/alerting/internal/store"
 	"github.com/omniguard/libs/auth"
 	"github.com/labstack/echo/v4"
@@ -48,12 +49,12 @@ func main() {
 	e := echo.New()
 	e.Use(authenticator.EchoAuthMiddleware)
 
+	alertHandler := handler.NewAlertHandler(db)
+	alertHandler.RegisterRoutes(e)
+
 	e.GET("/health", func(c echo.Context) error {
 		return c.String(http.StatusOK, "OK")
 	})
-
-	// TODO: Register actual alert handlers once implemented
-	// e.GET("/alerts", alertHandler.ListAlerts)
 
 	logger.Info("Starting Alerting HTTP service", zap.String("port", cfg.HTTPPort))
 	go func() {

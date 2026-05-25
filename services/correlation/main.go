@@ -7,9 +7,12 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/labstack/echo/v4"
 	"github.com/omniguard/correlation/config"
 	"github.com/omniguard/correlation/internal/compiler"
+	"github.com/omniguard/correlation/internal/handler"
 	"github.com/omniguard/correlation/internal/matcher"
+	"github.com/omniguard/libs/auth"
 	"go.uber.org/zap"
 )
 
@@ -43,6 +46,25 @@ func main() {
 
 	logger.Info("Starting Correlation engine...")
 	go engine.Start(ctx)
+
+	// API for Rule Management
+	authenticator, err := auth.NewAuthenticator(context.Background(), "http://keycloak:8080/realms/omniguard", "omniguard-backend")
+	if err != nil {
+		logger.Fatal("failed to create authenticator", zap.Error(err))
+	}
+
+	e := echo.New()
+	e.Use(authenticator.EchoAuthMiddleware)
+
+	ruleHandler := handler.NewRuleHandler(logger)
+	ruleHandler.RegisterRoutes(e)
+
+	logger.Info("Starting Correlation API service", zap.String("port", "8084"))
+	go func() {
+		if err := e.Start(":8084"); err != nil {
+			logger.Info("Shutting down Correlation API server")
+		}
+	}()
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
