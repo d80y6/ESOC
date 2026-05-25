@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -10,6 +11,8 @@ import (
 	"github.com/omniguard/alerting/config"
 	"github.com/omniguard/alerting/internal/consumer"
 	"github.com/omniguard/alerting/internal/store"
+	"github.com/omniguard/libs/auth"
+	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -35,6 +38,29 @@ func main() {
 	}
 
 	processor := consumer.NewAlertProcessor(cfg.KafkaBrokers, cfg.AlertsTopic, cfg.ConsumerGroupID, db, logger)
+
+	// Authenticator
+	authenticator, err := auth.NewAuthenticator(context.Background(), cfg.OIDCProviderURL, cfg.OIDCAudience)
+	if err != nil {
+		logger.Fatal("failed to create authenticator", zap.Error(err))
+	}
+
+	e := echo.New()
+	e.Use(authenticator.EchoAuthMiddleware)
+
+	e.GET("/health", func(c echo.Context) error {
+		return c.String(http.StatusOK, "OK")
+	})
+
+	// TODO: Register actual alert handlers once implemented
+	// e.GET("/alerts", alertHandler.ListAlerts)
+
+	logger.Info("Starting Alerting HTTP service", zap.String("port", cfg.HTTPPort))
+	go func() {
+		if err := e.Start(fmt.Sprintf(":%s", cfg.HTTPPort)); err != nil {
+			logger.Info("Shutting down Alerting HTTP server")
+		}
+	}()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()

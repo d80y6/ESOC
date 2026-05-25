@@ -8,6 +8,7 @@ import (
 
 type Alert struct {
 	ID          uint           `gorm:"primaryKey" json:"id"`
+	TenantID    string         `gorm:"index" json:"tenant_id"`
 	RuleID      string         `json:"rule_id"`
 	RuleName    string         `json:"rule_name"`
 	Severity    string         `json:"severity"`

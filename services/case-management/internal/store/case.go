@@ -8,6 +8,7 @@ import (
 
 type Case struct {
 	ID          uint           `gorm:"primaryKey" json:"id"`
+	TenantID    string         `gorm:"index" json:"tenant_id"`
 	Title       string         `json:"title"`
 	Description string         `json:"description"`
 	Severity    string         `json:"severity"`
