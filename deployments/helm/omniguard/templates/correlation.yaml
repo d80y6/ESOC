@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "omniguard.fullname" . }}-correlation
+  labels:
+    {{- include "omniguard.labels" . | nindent 4 }}
+    app: correlation
+spec:
+  replicas: {{ .Values.correlation.replicaCount | default 2 }}
+  selector:
+    matchLabels:
+      app: correlation
+  template:
+    metadata:
+      labels:
+        app: correlation
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+        - name: correlation
+          image: "{{ .Values.correlation.image.repository }}:{{ .Values.correlation.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.correlation.image.pullPolicy }}
+          ports:
+            - name: metrics
+              containerPort: 9090
+              protocol: TCP
+          env:
+            - name: KAFKA_BROKERS
+              value: "{{ .Values.kafka.fullnameOverride | default "kafka" }}:9092"
+            - name: INPUT_TOPIC
+              value: "normalized-events"
+            - name: OUTPUT_TOPIC
+              value: "alerts"
+            - name: CONSUMER_GROUP_ID
+              value: "correlation-engine"
+          resources:
+            {{- toYaml .Values.correlation.resources | nindent 12 }}
+          livenessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          readinessProbe:
+            httpGet:
+              path: /metrics
+              port: metrics
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "omniguard.fullname" . }}-correlation
+  labels:
+    {{- include "omniguard.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9090
+      targetPort: metrics
+      protocol: TCP
+      name: metrics
+  selector:
+    app: correlation

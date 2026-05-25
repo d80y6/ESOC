@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -10,6 +11,7 @@ import (
 	"github.com/omniguard/correlation/config"
 	"github.com/omniguard/correlation/internal/compiler"
 	"github.com/omniguard/correlation/internal/matcher"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 )
 
@@ -40,6 +42,14 @@ func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	logger.Info("Starting Prometheus metrics server on :9090")
+	go func() {
+		http.Handle("/metrics", promhttp.Handler())
+		if err := http.ListenAndServe(":9090", nil); err != nil {
+			logger.Error("Metrics server failed", zap.Error(err))
+		}
+	}()
 
 	logger.Info("Starting Correlation engine...")
 	go engine.Start(ctx)
