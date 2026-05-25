@@ -1,4 +1,4 @@
-from fastapi import FastAPI, BackgroundTasks, Request
+from fastapi import FastAPI, BackgroundTasks, Request, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 from core.executor import WorkflowExecutor
@@ -37,7 +37,11 @@ def create_workflow(workflow: Workflow):
     return {"id": workflow.id, "status": "created"}
 
 @app.post("/trigger")
-def trigger_workflow(req: TriggerRequest, background_tasks: BackgroundTasks):
+def trigger_workflow(req: TriggerRequest, request: Request, background_tasks: BackgroundTasks):
+    tenant_id = getattr(request.state, "tenant_id", None)
+    if not tenant_id:
+        raise HTTPException(status_code=403, detail="Tenant context missing")
+
     workflow = workflows.get(req.workflow_id)
     if not workflow:
         return {"error": "Workflow not found"}, 404

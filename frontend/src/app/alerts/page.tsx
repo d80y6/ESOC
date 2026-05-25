@@ -1,16 +1,45 @@
 "use client";
 
-import { useState } from "react";
-import { Search, Filter, MoreHorizontal } from "lucide-react";
-
-const mockAlerts = [
-  { id: 1, time: "2026-05-23 14:20:01", rule: "Suspicious Logon", severity: "High", host: "WEB-01", status: "Open" },
-  { id: 2, time: "2026-05-23 14:18:45", rule: "Brute Force", severity: "Medium", host: "DB-PROD", status: "In-Progress" },
-  { id: 3, time: "2026-05-23 14:15:10", rule: "Process Injection", severity: "Critical", host: "WRK-99", status: "Open" },
-];
+import { useState, useEffect } from "react";
+import { Search, Filter, MoreHorizontal, RefreshCw } from "lucide-react";
 
 export default function AlertConsole() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [alerts, setAlerts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchAlerts = async () => {
+    setLoading(true);
+    try {
+      // In a real ISP environment, this would call the Alerting Service API
+      // For this implementation, we fetch from the Search service using the 'alerts' filter
+      const response = await fetch("/api/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query: "rule_name: *",
+          size: 20
+        }),
+      });
+      const data = await response.json();
+      setAlerts(data.hits?.hits?.map((h: any) => ({
+        id: h._id,
+        time: h._source["@timestamp"],
+        rule: h._source["rule_name"],
+        severity: h._source["severity"] || "Medium",
+        host: h._source["host.name"] || "N/A",
+        status: h._source["status"] || "Open"
+      })) || []);
+    } catch (err) {
+      console.error("Failed to fetch alerts", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAlerts();
+  }, []);
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-50 p-8">
@@ -30,6 +59,9 @@ export default function AlertConsole() {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
            </div>
+           <button className="bg-slate-900 border border-slate-800 p-2 rounded-lg hover:bg-slate-800" onClick={fetchAlerts}>
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+           </button>
            <button className="bg-slate-900 border border-slate-800 p-2 rounded-lg hover:bg-slate-800">
               <Filter className="h-4 w-4" />
            </button>
@@ -49,9 +81,17 @@ export default function AlertConsole() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800">
-            {mockAlerts.map((alert) => (
+            {loading ? (
+              <tr>
+                <td colSpan={6} className="px-6 py-12 text-center text-slate-500">Loading alerts...</td>
+              </tr>
+            ) : alerts.length === 0 ? (
+              <tr>
+                <td colSpan={6} className="px-6 py-12 text-center text-slate-500">No alerts found</td>
+              </tr>
+            ) : alerts.filter(a => a.rule.toLowerCase().includes(searchTerm.toLowerCase())).map((alert) => (
               <tr key={alert.id} className="hover:bg-slate-800/50 transition-colors">
-                <td className="px-6 py-4 text-sm font-mono">{alert.time}</td>
+                <td className="px-6 py-4 text-sm font-mono truncate max-w-[200px]">{alert.time}</td>
                 <td className="px-6 py-4 font-medium">{alert.rule}</td>
                 <td className="px-6 py-4">
                   <span className={`px-2 py-1 rounded text-xs font-bold uppercase ${
