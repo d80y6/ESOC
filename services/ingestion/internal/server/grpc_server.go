@@ -5,6 +5,7 @@ import (
 	"github.com/google/uuid"
 	pb "github.com/omniguard/ingestion/api/proto/v1"
 	"github.com/omniguard/ingestion/internal/producer"
+	"github.com/omniguard/libs/auth"
 	"go.uber.org/zap"
 )
 
@@ -31,7 +32,7 @@ type RawLog struct {
 
 func (s *IngestionGRPCServer) IngestLog(ctx context.Context, req *pb.IngestLogRequest) (*pb.IngestLogResponse, error) {
 	eventID := uuid.New().String()
-	tenantID, _ := ctx.Value("tenant_id").(string)
+	tenantID := auth.GetTenantID(ctx)
 
 	rawLog := RawLog{
 		EventID:  eventID,

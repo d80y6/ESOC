@@ -32,10 +32,16 @@ class WorkflowExecutor:
         # SSRF Protection: URL Allowlist (Demo)
         allowed_domains = ["slack.com", "hooks.slack.com", "api.pagerduty.com", "outlook.office.com"]
 
+        # Safely render the URL template to avoid object attribute access
         try:
-            url = url_template.format(**context)
-        except KeyError as e:
-            logger.error(f"Context missing key for URL template: {e}")
+            import re
+            def safe_sub(match):
+                key = match.group(1)
+                return str(context.get(key, match.group(0)))
+
+            url = re.sub(r'\{([a-zA-Z0-9_-]+)\}', safe_sub, url_template)
+        except Exception as e:
+            logger.error(f"Safe template rendering failed: {e}")
             return
 
         from urllib.parse import urlparse

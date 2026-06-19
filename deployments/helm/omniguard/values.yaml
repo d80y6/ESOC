@@ -37,6 +37,15 @@ normalization:
     runAsNonRoot: true
     runAsUser: 1000
 
+search:
+  replicaCount: 2
+  image:
+    repository: omniguard/search
+    tag: latest
+  securityContext:
+    runAsNonRoot: true
+    runAsUser: 1000
+
 correlation:
   replicaCount: 2
   image:

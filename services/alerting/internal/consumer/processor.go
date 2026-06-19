@@ -31,6 +31,7 @@ func NewAlertProcessor(brokers []string, topic, groupID string, db *gorm.DB, log
 type KafkaAlert struct {
 	RuleID   string                 `json:"rule_id"`
 	RuleName string                 `json:"rule_name"`
+	TenantID string                 `json:"tenant_id"`
 	Event    map[string]interface{} `json:"event"`
 }
 
@@ -50,8 +51,17 @@ func (p *AlertProcessor) Start(ctx context.Context) {
 			continue
 		}
 
+		// Use tenant_id from alert or fallback to event field if available
+		tenantID := ka.TenantID
+		if tenantID == "" {
+			if tid, ok := ka.Event["tenant_id"].(string); ok {
+				tenantID = tid
+			}
+		}
+
 		eventJSON, _ := json.Marshal(ka.Event)
 		alert := store.Alert{
+			TenantID:  tenantID,
 			RuleID:    ka.RuleID,
 			RuleName:  ka.RuleName,
 			Status:    "open",
